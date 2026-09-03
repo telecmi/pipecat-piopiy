@@ -1,0 +1,86 @@
+---
+title: "Piopiy"
+description: "Take phone calls, transfer them and hang up on the Piopiy platform by TeleCMI"
+---
+
+<Snippet file="community-maintained.mdx" />
+
+## Overview
+
+`pipecat-piopiy` connects a Pipecat bot to the Piopiy telephony platform by
+TeleCMI. The platform bridges each phone call - placed by its API, arriving on
+your numbers, or arriving from your PBX over SIP Connect - into a LiveKit
+room and dispatches it to your worker. Media runs through Pipecat's
+`LiveKitTransport`; the package runs the worker, tells you who is calling,
+and lets the agent transfer the caller (warm or blind) and hang up, including
+as LLM function calls.
+
+## Installation
+
+```bash
+pip install pipecat-piopiy
+```
+
+## Prerequisites
+
+- A Piopiy account with an AI agent and its worker token (dashboard)
+- `PIOPIY_AGENT_ID`, `PIOPIY_TOKEN`, `PIOPIY_API_URL` in the environment
+
+## Configuration
+
+| variable | what |
+|---|---|
+| `PIOPIY_AGENT_ID` | the agent this worker serves |
+| `PIOPIY_TOKEN` | the account's Bearer token |
+| `PIOPIY_API_URL` | the platform's `/v3` base URL |
+| `PIOPIY_MAX_SESSIONS` | calls one process handles at once |
+
+## Usage
+
+```python
+from pipecat_piopiy import PiopiyRunner, PiopiyCallControl, piopiy_tools
+from pipecat_piopiy.processors import PiopiyEventsProcessor
+
+async def bot(transport, call):
+    control = PiopiyCallControl(call)
+    tools = piopiy_tools(control, transfer_number="919876543210",
+                         transfer_caller_id="911203134087")
+    context = LLMContext(messages=[{"role": "system", "content": PROMPT}],
+                         tools=tools.schemas)
+    aggregators = LLMContextAggregatorPair(
+        context, user_params=LLMUserAggregatorParams(vad_analyzer=SileroVADAnalyzer()))
+
+    pipeline = Pipeline([
+        transport.input(),
+        PiopiyEventsProcessor(call),
+        stt, aggregators.user(), llm, tts,
+        transport.output(), aggregators.assistant(),
+    ])
+    task = PipelineTask(pipeline)
+
+    @transport.event_handler("on_first_participant_joined")
+    async def on_caller_joined(_t, participant_id):
+        await task.queue_frames([LLMRunFrame()])
+
+    @transport.event_handler("on_participant_left")
+    async def on_caller_left(_t, participant_id, reason):
+        await task.cancel()
+
+    await PipelineRunner(handle_sigint=False).run(task)
+
+PiopiyRunner().run(bot)
+```
+
+`transfer_call` (warm by default, `mode="blind"` to hand over immediately)
+and `end_call` are advertised to the LLM as function calls. Transfer progress
+arrives in the pipeline as `PiopiyTransferStatusFrame` and is narrated to the
+caller by default.
+
+## Compatibility
+
+Tested with Pipecat v1.8.1. Source and issues:
+https://github.com/telecmi/pipecat-piopiy
+
+## Demo
+
+Video: (link to the 30-60 s demo)
