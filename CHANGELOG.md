@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0 - 2026-09-03
+
+- `PiopiyCallControl` and friends now live in `piopiy-agent` (>= 1.1.0) and are
+  shared with `livekit-piopiy`; imports from `pipecat_piopiy` are unchanged.
+
 ## 0.1.0 - 2026-09-03
 
 First release. Tested with Pipecat v1.8.1.

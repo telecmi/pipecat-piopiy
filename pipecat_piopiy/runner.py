@@ -71,7 +71,7 @@ class PiopiyRunner:
             register=register,
             max_sessions=max_sessions,
             tls=tls,
-            runtime="pipecat-piopiy/0.1.0",
+            runtime="pipecat-piopiy/0.2.0",
         )
         self._sample_rate = sample_rate
         self._livekit_params = livekit_params
