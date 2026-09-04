@@ -23,9 +23,9 @@ laptop.
 |---|---|---|
 | `PIOPIY_AGENT_ID` | the agent's id from the Piopiy dashboard | which agent this process serves; one process serves one agent |
 | `PIOPIY_TOKEN` | the account's Bearer token | authenticates the worker to the register and the API |
-| `PIOPIY_API_URL` | the platform's `/v3` base URL, from the dashboard | where transfer, hangup and status requests go; **required**, there is no default |
+| `PIOPIY_API_URL` | optional override | the REST base for transfer, hangup and status; default `https://rest.piopiy.com/v3` |
 | `PIOPIY_MAX_SESSIONS` | calls per process, default 10 | capacity reported to the platform; size it to the box (each call runs STT, LLM and TTS streams) |
-| `PIOPIY_REGISTER` | optional `host:port` | only when told to use a non-default register (regional or private) |
+| `PIOPIY_REGISTER` | optional | default `https://register.piopiy.com` (gRPC over TLS, 443); a URL or `host:port` for a regional or private register |
 | `PIOPIY_TLS` | optional, `false` only for a private register without TLS | never `false` against the public register |
 | `PIOPIY_TRANSFER_NUMBER`, `PIOPIY_CALLER_ID` | example only | where `transfer_call` sends the caller, and the DID to present; SIP Connect calls require the caller id |
 | provider keys | `DEEPGRAM_API_KEY`, `OPENAI_API_KEY`, ... | whatever the pipeline uses |
@@ -68,5 +68,5 @@ python -m piopiy_agent            # OK registered in <ms>
 
 - One process serves one `PIOPIY_AGENT_ID`. Run separate processes for
   separate agents.
-- `PIOPIY_API_URL` must point at the same platform region the agent lives in.
+- `PIOPIY_API_URL` and `PIOPIY_REGISTER` only need setting for a regional or private deployment.
 - Tested with Pipecat v1.8.1; the dependency range is `>=1.8,<2`.

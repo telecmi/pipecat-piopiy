@@ -101,5 +101,5 @@ def test_missing_config_is_explicit(monkeypatch):
     monkeypatch.delenv("PIOPIY_API_URL", raising=False)
     with pytest.raises(ValueError):
         PiopiyCallControl(make_call())
-    with pytest.raises(ValueError):
-        PiopiyCallControl(make_call(), token="T")
+    control = PiopiyCallControl(make_call(), token="T")
+    assert control._api_url == "https://rest.piopiy.com/v3"
