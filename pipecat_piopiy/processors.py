@@ -46,7 +46,7 @@ class PiopiyEventsProcessor(FrameProcessor):
     and carries on. Set ``narrate=False`` to handle the frames yourself.
 
     The platform pushes these messages for every transfer on the call, whether
-    the agent's tool started it or the customer's backend did through the API.
+    the agent's tool started it or your backend did through the API.
     """
 
     def __init__(

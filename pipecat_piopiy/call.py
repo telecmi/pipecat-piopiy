@@ -12,26 +12,27 @@ class PiopiyCall:
 
     Built by :class:`~pipecat_piopiy.runner.PiopiyRunner` from the job the
     Piopiy platform dispatched. Every live-call action (transfer, hangup,
-    status) keys on ``call_id``, which is the customer leg of the call - the
-    id the platform expects on ``/v3/calls/{call_id}/actions/*``.
+    status) keys on ``call_id``, the id the platform expects on
+    ``/v3/calls/{call_id}/actions/*``.
 
     Attributes:
-        call_id: The customer leg's call id. Use it for every action.
+        call_id: The call's id. Use it for every action.
         room_name: The LiveKit room the call's media is bridged into.
         direction: ``"inbound"`` when someone called the agent, ``"outbound"``
             when the agent called them.
-        from_number: The caller's number. On SIP Connect calls this is the
-            PBX's SIP user, not a phone number.
-        to_number: The number dialled. On SIP Connect calls this is the agent
-            id or extension the PBX dialled.
+        from_number: The caller's number. When the call came from a phone system you connected
+            to Piopiy this is that system's user name, not a phone number.
+        to_number: The number dialled, or the agent id or extension a connected
+            phone system dialled.
         agent_id: The Piopiy agent handling this call.
         variables: Key/values passed on call creation as ``variables`` - a
             campaign's context for the conversation. Empty on inbound calls
             unless the platform attached any.
-        sip_headers: SIP headers the platform forwarded, when any.
-        sip_account_id: On SIP Connect calls, the SIP account the call came in
-            on, so one agent can tell PBXs or sites apart. ``None`` on calls
-            that arrived over a phone number.
+        sip_headers: Extra headers a connected phone system sent with the call,
+            when any.
+        sip_account_id: When the call came from a phone system you connected
+            to Piopiy, which connection it came through, so one agent can tell
+            your sites apart. ``None`` on calls to a phone number.
         trace_id: The platform's trace id for this call. Quote it to support.
     """
 
@@ -57,7 +58,7 @@ class PiopiyCall:
 
     @property
     def is_sip_connect(self) -> bool:
-        """True when the call arrived over SIP Connect rather than a phone number."""
+        """True when the call came from a phone system you connected to Piopiy."""
         return self.sip_account_id is not None
 
     @classmethod

@@ -49,14 +49,16 @@ class PiopiyTools:
             control: The call's control handle.
             transfer_number: The phone number a transfer goes to when the model
                 does not name one. Usually your human desk.
-            transfer_sip_uri: A SIP destination instead of a number.
-            transfer_caller_id: The DID to present on the transfer leg. Required
-                on SIP Connect calls, which have no dialled number to reuse.
+            transfer_sip_uri: An address on your own phone system instead of a
+                number (advanced).
+            transfer_caller_id: The number the human sees when their phone
+                rings; one of your Piopiy numbers. Required for calls that came
+                from a phone system you connected to Piopiy.
             allow_model_destination: Let the model pass its own ``to_number`` or
                 ``sip_uri``. Off by default so a caller cannot talk the agent into
                 dialling an arbitrary number.
-            confirm: Require the human to press 1 before the bridge, so a
-                voicemail greeting can never accept a transfer.
+            confirm: Require the human to press 1 before the caller is handed
+                over, so a voicemail greeting can never accept a transfer.
             timeout_sec: How long the human's phone rings.
         """
         self._control = control
@@ -92,7 +94,7 @@ class PiopiyTools:
             }
             properties["sip_uri"] = {
                 "type": "string",
-                "description": "SIP address to transfer to, e.g. sip:desk@pbx.example.com.",
+                "description": "Address on your own phone system to transfer to (advanced).",
             }
 
         self.transfer_schema = FunctionSchema(

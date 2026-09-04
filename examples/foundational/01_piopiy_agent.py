@@ -1,7 +1,7 @@
 """A Piopiy voice agent that can transfer the caller to a human and hang up.
 
-It answers calls the Piopiy API places, calls arriving on your phone numbers,
-and calls arriving over SIP Connect. Three things it can do mid-call:
+It answers calls placed through the Piopiy API, calls to your Piopiy numbers, and
+calls from a phone system you connected to Piopiy. Three things it can do mid-call:
 
   - warm transfer   the human's phone rings while the caller stays with the
                     agent; if nobody answers, the agent carries on
@@ -54,7 +54,7 @@ You can act on the call:
 
 async def bot(transport, call: PiopiyCall):
     """Runs once per call, with a transport already pointed at the call's room."""
-    logger.info("handling {} call from {} (sip account {})", call.direction, call.from_number, call.sip_account_id)
+    logger.info("handling {} call from {} (connection {})", call.direction, call.from_number, call.sip_account_id)
 
     # language MUST be the plain string "en": Pipecat's Language enum
     # serialises as "Language.EN" in Deepgram's query string and Deepgram

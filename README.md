@@ -1,15 +1,13 @@
 # pipecat-piopiy
 
-Piopiy telephony for [Pipecat](https://github.com/pipecat-ai/pipecat) voice
-agents. Your Pipecat bot takes real phone calls on the Piopiy platform by
-TeleCMI: calls the Piopiy API places, calls arriving on your numbers, and
-calls arriving from your PBX over SIP Connect. Mid-call it can transfer the
-caller to a human, warm or blind, and hang up.
+Give your [Pipecat](https://github.com/pipecat-ai/pipecat) agent a phone.
 
-Piopiy bridges each call into a LiveKit room and hands your worker the room.
-Media runs through Pipecat's own `LiveKitTransport`; this package supplies the
-rest - taking the call, knowing who is calling, acting on the call, and hearing
-about transfers.
+[Piopiy](https://piopiy.com) is a communication platform: we provide the
+phone numbers, carry the calls, and host all the voice infrastructure. You
+build the agent with Pipecat and run it wherever you like; this package
+connects the two. Your agent answers calls to your Piopiy numbers, places
+calls through the Piopiy API, and mid-call it can hand the caller to a human
+or end the call. Nothing telephony-related to host or configure on your side.
 
 **Tested with Pipecat v1.8.1.** Community-maintained by
 [TeleCMI](https://telecmi.com); not part of the Pipecat core.
@@ -22,8 +20,7 @@ pip install pipecat-piopiy
 pip install "pipecat-piopiy[example]"
 ```
 
-Python 3.10+. Depends on `pipecat-ai[livekit]` and `piopiy-agent`, the
-framework-agnostic Piopiy worker SDK.
+Python 3.10+.
 
 ## Use with a pipeline
 
@@ -62,83 +59,81 @@ async def bot(transport, call):
 PiopiyRunner().run(bot)
 ```
 
-`PiopiyRunner` connects to Piopiy as a worker for your agent, and for every
-call builds a `LiveKitTransport` pointed at the call's room and calls `bot`.
-It accepts the call when the transport connects, which is when the caller is
-bridged in. Use `PipelineRunner(handle_sigint=False)`: the worker owns the
-process signals.
+`PiopiyRunner` registers your process with Piopiy as the worker for your
+agent. For every call, Piopiy hands it the call; the runner builds a
+transport already connected to that call's audio and calls `bot`. The
+caller is joined the moment the transport is connected. Use
+`PipelineRunner(handle_sigint=False)`: the runner owns the process signals.
 
 ## Run the example
 
 ```bash
 cd examples/foundational
-cp .env.example .env        # agent id, token, API base, transfer number, keys
+cp .env.example .env        # your agent id and token, the transfer number, your keys
 python 01_piopiy_agent.py
 ```
 
-Then call your agent: place a call with `POST /v3/voice/agent/call`, ring one of
-your numbers mapped to the agent, or dial the agent id from a PBX registered
-over SIP Connect. Ask for a person to see a warm transfer, ask for "the billing
-line" to see a blind transfer, and say goodbye to see it hang up.
+Then call your agent: ring one of your Piopiy numbers, or place a call with
+`POST /v3/voice/agent/call`. Ask for a person to see a warm transfer, ask
+for "the billing line" to see a blind transfer, and say goodbye to see it
+hang up.
 
 ## Configuration
 
+Two values, both from your Piopiy dashboard:
+
 | variable | what |
 |---|---|
-| `PIOPIY_AGENT_ID` | the agent this worker serves, from the dashboard |
-| `PIOPIY_TOKEN` | the Bearer token, the same one that creates calls |
-| `PIOPIY_API_URL` | optional; the REST base, default `https://rest.piopiy.com/v3` |
-| `PIOPIY_REGISTER` | optional; default `register.piopiy.com` (host only); `host:port` for a private register |
-| `PIOPIY_TLS` | optional; `false` to talk to the register without TLS (development) |
-| `PIOPIY_MAX_SESSIONS` | calls one process handles at once |
+| `PIOPIY_AGENT_ID` | the agent this process serves |
+| `PIOPIY_TOKEN` | your API token |
+
+Optional: `PIOPIY_MAX_SESSIONS` (calls one process handles at once, default
+10). `PIOPIY_API_URL` and `PIOPIY_REGISTER` exist only for regional or
+private deployments; the public platform needs neither.
 
 ## What the package gives you
 
-**`PiopiyCall`** - who is calling whom: `call_id`, `direction`, `from_number`,
-`to_number`, `agent_id`, `variables` from the create request, and
-`sip_account_id` on SIP Connect calls so one agent can tell your PBXs apart.
+**`PiopiyCall`** - the call in hand: `call_id`, `direction`, `from_number`,
+`to_number`, `agent_id`, the `variables` you attached when placing the call,
+and `sip_account_id` when the call came from a phone system you connected
+to Piopiy, so one agent can tell your sites apart.
 
-**`PiopiyCallControl`** - actions on the live call over the Piopiy API:
+**`PiopiyCallControl`** - act on the call:
 
 ```python
 result  = await control.warm_transfer(to_number="9198...", transfer_summary="Refund on order A-1042")
-result  = await control.warm_transfer(sip_uri="sip:desk@pbx.example.com", sip_headers={"X-Ticket": "A-1042"})
 result  = await control.blind_transfer(to_number="9198...", caller_id="9112...")
 await control.hangup(reason="resolved")
 verdict = await control.wait_for_transfer(result.request_id)   # queued -> completed | failed
 ```
 
-A warm transfer rings the human while the caller stays in conversation with
-the agent; on answer the caller is handed over and the agent leaves; if nobody
-answers the conversation simply continues. A blind transfer hands the caller
-over at once. One transfer at a time per call: a second one is refused with
-`PiopiyAPIError(409, "transfer_in_progress")` carrying the running transfer's
-`request_id`.
+A **warm transfer** rings the human while the caller stays in conversation
+with the agent; when the human answers the caller is handed over and the
+agent leaves; if nobody answers the conversation simply continues. A
+**blind transfer** hands the caller over at once. One transfer at a time per
+call: a second one is refused with `PiopiyAPIError(409,
+"transfer_in_progress")`.
 
 **`piopiy_tools()`** - `transfer_call` and `end_call` as LLM function calls.
 Each `FunctionSchema` carries its handler, so advertising `tools.schemas` on
-the `LLMContext` is all the wiring. The destination is fixed in code by
-default; pass `allow_model_destination=True` to let the model choose a
-number, and `transfer_caller_id` for the DID to present, which SIP Connect
-calls require.
+the `LLMContext` is all the wiring. The destination is fixed in your code by
+default so a caller cannot talk the agent into dialling anywhere else; pass
+`allow_model_destination=True` to let the model choose. `transfer_caller_id`
+is the number shown to the human being called; use one of your Piopiy
+numbers.
 
-**`PiopiyEventsProcessor`** - the platform pushes every transfer's progress
-into the call's room. The processor turns each message into a
-`PiopiyTransferStatusFrame` (`started`, `failed` with a reason, `completed`)
-and, by default, speaks it: "I'm connecting you now" as the target rings, an
-apology when it fails, plus a note into the LLM context so the model carries
-on sensibly. Pass `narrate=False` to handle the frames yourself. `completed`
-is best-effort: at that moment the agent is being removed from the call, and
-`on_participant_left` fires.
+**`PiopiyEventsProcessor`** - Piopiy tells the agent how a transfer is going.
+The processor turns each update into a `PiopiyTransferStatusFrame`
+(`started`, `failed` with a reason, `completed`) and, by default, speaks it:
+"I'm connecting you now" as the human's phone rings, an apology if nobody
+answers, plus a note into the LLM context so the model carries on sensibly.
+Pass `narrate=False` to handle the frames yourself.
 
 ## Notes
 
-- Every action uses the call's customer leg, which `PiopiyCall.call_id` is.
-- SIP Connect calls consume no phone number, so a transfer to a phone from one
-  needs `transfer_caller_id` (a DID you own).
-- Accept timing is handled for you: the runner accepts on `on_connected`, and
-  if the join missed the platform's deadline it cancels the bot so two agents
-  never share a call.
+- Every action uses `PiopiyCall.call_id`; the runner gives you the right one.
+- Accept timing is handled for you: if your process was too slow to join a
+  call, the bot is cancelled so two agents never share one call.
 - Pipecat changes quickly. This release is tested against v1.8.1; the pinned
   range in `pyproject.toml` is `>=1.8,<2`.
 
