@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2 - 2026-09-04
+
+- Documentation only: platform wording throughout (numbers, calls, transfers; no telephony internals). No code changes since 0.2.1.
+
 ## 0.2.1 - 2026-09-04
 
 - Production defaults from piopiy-agent 1.2: REST `https://rest.piopiy.com/v3`, register `register.piopiy.com`. `PIOPIY_API_URL` is optional now.
