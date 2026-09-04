@@ -25,7 +25,7 @@ from .processors import PiopiyEventsProcessor
 from .runner import PiopiyRunner
 from .tools import PiopiyTools, piopiy_tools
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 
 __all__ = [
     "TRANSFER_FAILURE_REASONS",

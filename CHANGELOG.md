@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3 - 2026-09-04
+
+- Metadata: `requires-python >= 3.11`, matching Pipecat 1.x. On 3.10 pip now says so instead of failing to resolve `pipecat-ai`.
+
 ## 0.2.2 - 2026-09-04
 
 - Documentation only: platform wording throughout (numbers, calls, transfers; no telephony internals). No code changes since 0.2.1.

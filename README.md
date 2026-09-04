@@ -20,7 +20,7 @@ pip install pipecat-piopiy
 pip install "pipecat-piopiy[example]"
 ```
 
-Python 3.10+.
+Python 3.11+ (what Pipecat 1.x requires).
 
 ## Use with a pipeline
 

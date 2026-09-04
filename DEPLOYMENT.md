@@ -31,7 +31,7 @@ Put them in the environment or a `.env` next to the script.
 
 ## Deploy order
 
-1. `pip install pipecat-piopiy` (plus your provider extras) in Python 3.10+.
+1. `pip install pipecat-piopiy` (plus your provider extras) in Python 3.11+ (what Pipecat 1.x requires).
 2. Check the credentials before anything else: `python -m piopiy_agent`
    prints `OK registered` or a precise failure. This separates "credentials
    wrong" from "agent code wrong", which otherwise look identical.
