@@ -76,7 +76,7 @@ cp .env.example .env        # agent id, token, API base, transfer number, keys
 python 01_piopiy_agent.py
 ```
 
-Then call your agent: place a call with `POST /v3/voice/ai/call`, ring one of
+Then call your agent: place a call with `POST /v3/voice/agent/call`, ring one of
 your numbers mapped to the agent, or dial the agent id from a PBX registered
 over SIP Connect. Ask for a person to see a warm transfer, ask for "the billing
 line" to see a blind transfer, and say goodbye to see it hang up.
