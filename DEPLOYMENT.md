@@ -25,7 +25,7 @@ laptop.
 | `PIOPIY_TOKEN` | the account's Bearer token | authenticates the worker to the register and the API |
 | `PIOPIY_API_URL` | optional override | the REST base for transfer, hangup and status; default `https://rest.piopiy.com/v3` |
 | `PIOPIY_MAX_SESSIONS` | calls per process, default 10 | capacity reported to the platform; size it to the box (each call runs STT, LLM and TTS streams) |
-| `PIOPIY_REGISTER` | optional | default `https://register.piopiy.com` (gRPC over TLS, 443); a URL or `host:port` for a regional or private register |
+| `PIOPIY_REGISTER` | optional | default `register.piopiy.com` (host only, gRPC over TLS); `host:port` for a regional or private register |
 | `PIOPIY_TLS` | optional, `false` only for a private register without TLS | never `false` against the public register |
 | `PIOPIY_TRANSFER_NUMBER`, `PIOPIY_CALLER_ID` | example only | where `transfer_call` sends the caller, and the DID to present; SIP Connect calls require the caller id |
 | provider keys | `DEEPGRAM_API_KEY`, `OPENAI_API_KEY`, ... | whatever the pipeline uses |

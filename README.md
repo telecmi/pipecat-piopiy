@@ -88,7 +88,7 @@ line" to see a blind transfer, and say goodbye to see it hang up.
 | `PIOPIY_AGENT_ID` | the agent this worker serves, from the dashboard |
 | `PIOPIY_TOKEN` | the Bearer token, the same one that creates calls |
 | `PIOPIY_API_URL` | optional; the REST base, default `https://rest.piopiy.com/v3` |
-| `PIOPIY_REGISTER` | optional; default `https://register.piopiy.com` (accepts a URL or `host:port`) |
+| `PIOPIY_REGISTER` | optional; default `register.piopiy.com` (host only); `host:port` for a private register |
 | `PIOPIY_TLS` | optional; `false` to talk to the register without TLS (development) |
 | `PIOPIY_MAX_SESSIONS` | calls one process handles at once |
 

@@ -2,7 +2,7 @@
 
 ## 0.2.1 - 2026-09-04
 
-- Production defaults from piopiy-agent 1.2: REST `https://rest.piopiy.com/v3`, register `https://register.piopiy.com`. `PIOPIY_API_URL` is optional now.
+- Production defaults from piopiy-agent 1.2: REST `https://rest.piopiy.com/v3`, register `register.piopiy.com`. `PIOPIY_API_URL` is optional now.
 
 ## 0.2.0 - 2026-09-03
 
