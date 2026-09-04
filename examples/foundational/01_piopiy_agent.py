@@ -18,7 +18,6 @@ Tested with Pipecat v1.8.1.
 
 import os
 
-from deepgram import LiveOptions
 from dotenv import load_dotenv
 from loguru import logger
 from pipecat.audio.vad.silero import SileroVADAnalyzer
@@ -31,7 +30,7 @@ from pipecat.processors.aggregators.llm_response_universal import (
     LLMContextAggregatorPair,
     LLMUserAggregatorParams,
 )
-from pipecat.services.deepgram.stt import DeepgramSTTService
+from pipecat.services.deepgram.stt import DeepgramSTTService, LiveOptions
 from pipecat.services.deepgram.tts import DeepgramTTSService
 from pipecat.services.openai.llm import OpenAILLMService
 
@@ -56,9 +55,8 @@ async def bot(transport, call: PiopiyCall):
     """Runs once per call, with a transport already pointed at the call's room."""
     logger.info("handling {} call from {} (connection {})", call.direction, call.from_number, call.sip_account_id)
 
-    # language MUST be the plain string "en": Pipecat's Language enum
-    # serialises as "Language.EN" in Deepgram's query string and Deepgram
-    # answers 400 - which surfaces only as "unable to connect".
+    # LiveOptions comes from Pipecat, not the Deepgram SDK (whose current
+    # major version no longer exports it). language is the plain string "en".
     stt = DeepgramSTTService(
         api_key=os.environ["DEEPGRAM_API_KEY"],
         sample_rate=16000,
