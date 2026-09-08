@@ -26,6 +26,7 @@ from pipecat.pipeline.task import PipelineParams, PipelineTask
 from pipecat.processors.aggregators.llm_context import LLMContext
 from pipecat.processors.aggregators.llm_response_universal import LLMContextAggregatorPair
 from pipecat.services.google.gemini_live.llm import GeminiLiveLLMService, InputParams
+from pipecat.services.google.gemini_live.vertex.llm import GeminiLiveVertexLLMService
 from pipecat.transports.livekit.transport import LiveKitParams
 
 from pipecat_piopiy import PiopiyCall, PiopiyCallControl, PiopiyRunner, piopiy_tools
@@ -67,15 +68,34 @@ async def bot(transport, call: PiopiyCall):
     )
 
     caller = f" The caller's number is {call.from_number}." if not call.is_sip_connect else ""
-    llm = GeminiLiveLLMService(
-        api_key=os.environ["GOOGLE_API_KEY"],
-        model=os.getenv("GEMINI_MODEL") or None,  # None = Pipecat's current default
-        voice_id=os.getenv("GEMINI_VOICE", "Kore"),  # female; Aoede, Leda, Zephyr also female
-        system_instruction=SYSTEM_PROMPT + caller,
-        # The native-audio model detects the spoken language itself and rejects
-        # most explicit codes (e.g. "en-IN"). Only pass a code when you set one.
-        params=InputParams(language=os.environ["GEMINI_LANGUAGE"]) if os.getenv("GEMINI_LANGUAGE") else None,
-    )
+    # Language: the native-audio model detects the spoken language itself and
+    # rejects most explicit codes (e.g. "en-IN"). Only pass one when set.
+    params = InputParams(language=os.environ["GEMINI_LANGUAGE"]) if os.getenv("GEMINI_LANGUAGE") else None
+    voice = os.getenv("GEMINI_VOICE", "Kore")  # female; Aoede, Leda, Zephyr also female
+
+    if os.getenv("GOOGLE_CLOUD_PROJECT"):
+        # Vertex AI: works from any server location, billed to your Google
+        # Cloud project. Credentials via GOOGLE_APPLICATION_CREDENTIALS or the
+        # machine's default Google credentials.
+        llm = GeminiLiveVertexLLMService(
+            project_id=os.environ["GOOGLE_CLOUD_PROJECT"],
+            location=os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1"),
+            credentials_path=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+            model=os.getenv("GEMINI_MODEL") or None,
+            voice_id=voice,
+            system_instruction=SYSTEM_PROMPT + caller,
+            params=params,
+        )
+    else:
+        # Google AI Studio key. Not offered from every region: if the log says
+        # "User location is not supported", switch to Vertex AI above.
+        llm = GeminiLiveLLMService(
+            api_key=os.environ["GOOGLE_API_KEY"],
+            model=os.getenv("GEMINI_MODEL") or None,  # None = Pipecat's current default
+            voice_id=voice,
+            system_instruction=SYSTEM_PROMPT + caller,
+            params=params,
+        )
 
     # The first turn: Gemini speaks as soon as the context is initialised, so
     # the opening user message is the cue to greet.
