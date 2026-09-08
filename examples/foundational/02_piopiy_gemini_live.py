@@ -72,7 +72,9 @@ async def bot(transport, call: PiopiyCall):
         model=os.getenv("GEMINI_MODEL") or None,  # None = Pipecat's current default
         voice_id=os.getenv("GEMINI_VOICE", "Charon"),
         system_instruction=SYSTEM_PROMPT + caller,
-        params=InputParams(language=os.getenv("GEMINI_LANGUAGE", "en-US")),
+        # The native-audio model detects the spoken language itself and rejects
+        # most explicit codes (e.g. "en-IN"). Only pass a code when you set one.
+        params=InputParams(language=os.environ["GEMINI_LANGUAGE"]) if os.getenv("GEMINI_LANGUAGE") else None,
     )
 
     # The first turn: Gemini speaks as soon as the context is initialised, so
