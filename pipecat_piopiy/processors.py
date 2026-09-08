@@ -45,6 +45,11 @@ class PiopiyEventsProcessor(FrameProcessor):
     it appends a short note to the LLM context so the model knows the outcome
     and carries on. Set ``narrate=False`` to handle the frames yourself.
 
+    With a speech-to-speech model (Gemini Live, OpenAI Realtime) there is no
+    TTS service to speak a line, so pass ``narration="llm"``: the processor then
+    asks the model itself to say it, by appending the note to the context and
+    running the model, instead of pushing a ``TTSSpeakFrame``.
+
     The platform pushes these messages for every transfer on the call, whether
     the agent's tool started it or your backend did through the API.
     """
@@ -54,6 +59,7 @@ class PiopiyEventsProcessor(FrameProcessor):
         call: PiopiyCall,
         *,
         narrate: bool = True,
+        narration: str = "tts",
         started_line: str = DEFAULT_STARTED_LINE,
         failure_lines: dict[str, str] | None = None,
         on_status: Callable[[PiopiyTransferStatusFrame], None] | None = None,
@@ -66,6 +72,10 @@ class PiopiyEventsProcessor(FrameProcessor):
                 on it so the runner can deliver the room messages.
             narrate: Speak the transfer's progress to the caller and inform the
                 LLM context. Off, only frames are emitted.
+            narration: ``"tts"`` (default) speaks the line through the TTS
+                service in the pipeline; ``"llm"`` has the model say it
+                itself - use this with speech-to-speech models, which have no
+                TTS stage.
             started_line: What to say when the target starts ringing.
             failure_lines: What to say per failure reason; merged over
                 :data:`DEFAULT_FAILURE_LINES`.
@@ -74,7 +84,10 @@ class PiopiyEventsProcessor(FrameProcessor):
         """
         super().__init__(**kwargs)
         self._call = call
+        if narration not in ("tts", "llm"):
+            raise ValueError('narration must be "tts" or "llm"')
         self._narrate = narrate
+        self._narration = narration
         self._started_line = started_line
         self._failure_lines = {**DEFAULT_FAILURE_LINES, **(failure_lines or {})}
         self._on_status = on_status
@@ -84,6 +97,32 @@ class PiopiyEventsProcessor(FrameProcessor):
         """Pass every frame through untouched."""
         await super().process_frame(frame, direction)
         await self.push_frame(frame, direction)
+
+    async def _say(self, line: str, note: str) -> None:
+        """Speak ``line`` to the caller and tell the model ``note``.
+
+        ``tts`` mode: the line goes to the TTS service as a ``TTSSpeakFrame``
+        and the note is appended to the context without a model turn.
+        ``llm`` mode: there is no TTS stage, so the note asks the model to say
+        the line itself and a model turn is run at once.
+        """
+        if self._narration == "tts":
+            await self.push_frame(TTSSpeakFrame(line))
+            await self.push_frame(
+                LLMMessagesAppendFrame([{"role": "system", "content": note}], run_llm=False)
+            )
+        else:
+            await self.push_frame(
+                LLMMessagesAppendFrame(
+                    [
+                        {
+                            "role": "system",
+                            "content": f'{note} Say to the caller now, in your own voice: "{line}"',
+                        }
+                    ],
+                    run_llm=True,
+                )
+            )
 
     async def on_room_data(self, data: bytes, sender: str | None = None) -> None:
         """Handle one data message from the call's room.
@@ -125,41 +164,21 @@ class PiopiyEventsProcessor(FrameProcessor):
             return
 
         if frame.status == "started":
-            await self.push_frame(TTSSpeakFrame(self._started_line))
-            await self.push_frame(
-                LLMMessagesAppendFrame(
-                    [
-                        {
-                            "role": "system",
-                            "content": (
-                                "The transfer target is now ringing. Keep the caller company "
-                                "briefly; do not start a new topic."
-                            ),
-                        }
-                    ],
-                    run_llm=False,
-                )
+            await self._say(
+                self._started_line,
+                "The transfer target is now ringing. Keep the caller company "
+                "briefly; do not start a new topic.",
             )
         elif frame.status == "failed":
             line = self._failure_lines.get(
                 (frame.reason or "").replace("_and_call_ended", ""),
                 self._failure_lines["network_error"],
             )
-            await self.push_frame(TTSSpeakFrame(line))
-            await self.push_frame(
-                LLMMessagesAppendFrame(
-                    [
-                        {
-                            "role": "system",
-                            "content": (
-                                f"The transfer failed ({frame.reason or 'unknown'}). You are still "
-                                "with the caller. Continue helping them; do not retry the "
-                                "transfer unless they ask."
-                            ),
-                        }
-                    ],
-                    run_llm=False,
-                )
+            await self._say(
+                line,
+                f"The transfer failed ({frame.reason or 'unknown'}). You are still "
+                "with the caller. Continue helping them; do not retry the "
+                "transfer unless they ask.",
             )
         # "completed": the platform is removing the agent from the call right
         # now. Nothing to say - the caller is already with the human.

@@ -78,6 +78,29 @@ Then call your agent: ring one of your Piopiy numbers, or place a call with
 for "the billing line" to see a blind transfer, and say goodbye to see it
 hang up.
 
+### Speech-to-speech with Gemini Live
+
+`02_piopiy_gemini_live.py` is the same agent on one speech-to-speech model:
+Gemini listens and talks directly, so there is no STT or TTS stage and the
+pipeline is `transport.input() -> events -> llm -> transport.output()`.
+Transfers and hangup work exactly as above.
+
+```bash
+pip install "pipecat-piopiy[example-gemini]"
+cd examples/foundational
+cp .env.example .env        # add GOOGLE_API_KEY
+python 02_piopiy_gemini_live.py
+```
+
+Two things differ from a pipeline with a TTS stage:
+
+- `PiopiyEventsProcessor(call, narration="llm")`: with no TTS to speak
+  "I'm connecting you now" or the apology when a transfer fails, the
+  processor asks the model to say it instead.
+- Gemini produces 24 kHz audio, so the example passes matching
+  `LiveKitParams` to `PiopiyRunner` and sets `audio_out_sample_rate=24000`
+  on the task. The same pattern fits any speech-to-speech model.
+
 ## Configuration
 
 Two values, both from your Piopiy dashboard:

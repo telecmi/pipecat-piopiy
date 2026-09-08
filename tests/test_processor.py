@@ -67,3 +67,21 @@ async def test_ignores_other_messages():
     await processor.on_room_data(b"not json", "someone")
     await processor.on_room_data(json.dumps({"type": "chat", "text": "hi"}).encode(), "someone")
     assert processor.pushed == []
+
+
+@pytest.mark.asyncio
+async def test_llm_narration_has_the_model_speak():
+    """Speech-to-speech pipelines have no TTS: the model must say the line itself."""
+    processor = Collecting(make_call(), narration="llm")
+    await processor.on_room_data(message(status="failed", reason="busy"), None)
+    kinds = [type(f) for f in processor.pushed]
+    assert TTSSpeakFrame not in kinds
+    appended = [f for f in processor.pushed if isinstance(f, LLMMessagesAppendFrame)]
+    assert appended and appended[0].run_llm is True
+    content = appended[0].messages[0]["content"]
+    assert "busy" in content and "Say to the caller now" in content
+
+
+def test_narration_mode_is_validated():
+    with pytest.raises(ValueError):
+        PiopiyEventsProcessor(make_call(), narration="loud")

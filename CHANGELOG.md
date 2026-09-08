@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.4 - 2026-09-08
+
+- New example `02_piopiy_gemini_live.py`: the same agent (warm transfer, blind transfer, hangup) on Gemini Live, a speech-to-speech model with no STT or TTS stage. Install with `pipecat-piopiy[example-gemini]`.
+- `PiopiyEventsProcessor(narration="llm")`: for pipelines without a TTS stage, transfer progress is spoken by the model itself instead of through a `TTSSpeakFrame`. Default `"tts"` is unchanged.
+
 ## 0.2.3 - 2026-09-04
 
 - Metadata: `requires-python >= 3.11`, matching Pipecat 1.x. On 3.10 pip now says so instead of failing to resolve `pipecat-ai`.
