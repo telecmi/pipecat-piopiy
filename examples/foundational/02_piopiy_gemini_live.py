@@ -70,7 +70,7 @@ async def bot(transport, call: PiopiyCall):
     llm = GeminiLiveLLMService(
         api_key=os.environ["GOOGLE_API_KEY"],
         model=os.getenv("GEMINI_MODEL") or None,  # None = Pipecat's current default
-        voice_id=os.getenv("GEMINI_VOICE", "Charon"),
+        voice_id=os.getenv("GEMINI_VOICE", "Kore")  # female; Aoede, Leda, Zephyr also female,
         system_instruction=SYSTEM_PROMPT + caller,
         # The native-audio model detects the spoken language itself and rejects
         # most explicit codes (e.g. "en-IN"). Only pass a code when you set one.
